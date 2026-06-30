@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fiji 2026">
+  <title>Event — Fiji 2026</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <a href="itinerary.html" class="header-back" aria-label="Back">‹</a>
+      <div>
+        <div class="header-title" id="headerTitle">Event</div>
+        <div class="header-subtitle" id="headerSubtitle"></div>
+      </div>
+    </div>
+  </header>
+
+  <div id="pageContent"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    requireAuth();
+
+    const TYPE_ICONS = {
+      flight:   '✈️',
+      activity: '🤿',
+      food:     '🍽️',
+      hotel:    '🏨',
+      transfer: '🚌',
+      info:     'ℹ️',
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get('id');
+
+    let event = null;
+    let day = null;
+    for (const d of TRIP.days) {
+      const found = d.events.find(e => e.id === eventId);
+      if (found) { event = found; day = d; break; }
+    }
+
+    const content = document.getElementById('pageContent');
+
+    if (!event) {
+      content.innerHTML = '<p style="padding:40px;text-align:center;color:#64748b">Event not found.</p>';
+    } else {
+      document.title = event.title + ' — Fiji 2026';
+      document.getElementById('headerTitle').textContent = event.title;
+      document.getElementById('headerSubtitle').textContent = day.label;
+
+      const icon = TYPE_ICONS[event.type] || '📌';
+      const det = event.detail;
+
+      let html = `
+        <div class="detail-hero">
+          <span class="detail-icon">${icon}</span>
+          <div class="detail-title">${event.title}</div>
+          <div class="detail-date">${day.label} · ${event.timeDisplay || event.time}</div>
+        </div>
+        <div class="detail-content">
+      `;
+
+      // ── When & Where ─────────────────────────────────────────
+      html += `
+        <div class="info-card">
+          <div class="info-card-title">When &amp; Where</div>
+          <div class="info-row">
+            <span class="info-icon">📅</span>
+            <div class="info-body">
+              <div class="info-label">Date</div>
+              <div class="info-value">${day.label}</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <span class="info-icon">⏰</span>
+            <div class="info-body">
+              <div class="info-label">Time</div>
+              <div class="info-value">${event.timeDisplay || event.time}</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <span class="info-icon">📍</span>
+            <div class="info-body">
+              <div class="info-label">Location</div>
+              <div class="info-value">
+                ${event.location}<br>
+                <a href="https://maps.apple.com/?q=${encodeURIComponent(event.location)}" class="map-btn">🗺 Open in Maps</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // ── Flight details ────────────────────────────────────────
+      if (event.type === 'flight' && det.flight) {
+        const f = det.flight;
+        html += `
+          <div class="info-card">
+            <div class="info-card-title">Flight Details</div>
+            <div class="flight-route">
+              <div class="flight-stop">
+                <div class="flight-stop-time">${f.departure.time}</div>
+                <div class="flight-stop-airport">${f.departure.code}</div>
+                <div class="flight-stop-city">${f.departure.city}</div>
+              </div>
+              <div class="flight-line">
+                <div class="flight-line-bar"></div>
+                <div class="flight-duration">${f.duration || ''}</div>
+              </div>
+              <div class="flight-stop">
+                <div class="flight-stop-time">${f.arrival.time}</div>
+                <div class="flight-stop-airport">${f.arrival.code}</div>
+                <div class="flight-stop-city">${f.arrival.city}</div>
+              </div>
+            </div>
+        `;
+        if (f.airline || f.flightNumber) {
+          html += `
+            <div class="info-row">
+              <span class="info-icon">✈️</span>
+              <div class="info-body">
+                <div class="info-label">Flight</div>
+                <div class="info-value">${[f.airline, f.flightNumber].filter(Boolean).join(' · ') || '—'}</div>
+              </div>
+            </div>
+          `;
+        }
+        if (f.reference) {
+          html += `
+            <div class="info-row">
+              <span class="info-icon">🎫</span>
+              <div class="info-body">
+                <div class="info-label">Booking Reference</div>
+                <div class="info-value" style="font-family:monospace;font-size:17px;font-weight:700;letter-spacing:2px">${f.reference}</div>
+              </div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      // ── Description / Notes ───────────────────────────────────
+      if (det.description) {
+        html += `
+          <div class="info-card">
+            <div class="info-card-title">About</div>
+            <p class="detail-notes">${det.description}</p>
+          </div>
+        `;
+      }
+
+      if (det.notes) {
+        html += `
+          <div class="info-card">
+            <div class="info-card-title">Notes</div>
+            <p class="detail-notes">${det.notes}</p>
+          </div>
+        `;
+      }
+
+      html += `</div>`; // close detail-content
+      content.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
