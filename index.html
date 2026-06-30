@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fiji 2026">
+  <title>Fiji 2026</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="login">
+  <div class="login-card">
+    <span class="login-emoji">🌴</span>
+    <h1 class="login-title">Fiji 2026</h1>
+    <p class="login-subtitle">Enter the trip password<br>to view the itinerary</p>
+
+    <form id="loginForm">
+      <input
+        type="password"
+        id="passwordInput"
+        class="login-input"
+        placeholder="Password"
+        autocomplete="current-password"
+        autocapitalize="none"
+        autofocus
+      >
+      <button type="submit" class="login-btn" id="loginBtn">Enter →</button>
+    </form>
+    <p class="login-error" id="loginError"></p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // If already authed, skip login
+    if (isAuthenticated()) {
+      window.location.replace('itinerary.html');
+    }
+
+    const form = document.getElementById('loginForm');
+    const input = document.getElementById('passwordInput');
+    const btn = document.getElementById('loginBtn');
+    const errorEl = document.getElementById('loginError');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = input.value.trim();
+      if (!password) return;
+
+      btn.disabled = true;
+      btn.textContent = '…';
+      errorEl.textContent = '';
+
+      const hash = await hashPassword(password);
+
+      if (hash === CONFIG.passwordHash) {
+        setAuthenticated();
+        window.location.replace('itinerary.html');
+      } else {
+        input.classList.add('shake');
+        errorEl.textContent = 'Incorrect password. Try again.';
+        input.value = '';
+        btn.disabled = false;
+        btn.textContent = 'Enter →';
+        setTimeout(() => input.classList.remove('shake'), 500);
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fiji 2026">
+  <title>Fiji 2026 — Itinerary</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <div>
+        <div class="header-title">Fiji 2026 🌴</div>
+        <div class="header-subtitle" id="headerSubtitle">Loading…</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <span class="hero-emoji">🏝️</span>
+    <div class="hero-title" id="heroTitle">Fiji 2026</div>
+    <div class="hero-dates" id="heroDates"></div>
+    <div class="hero-divider"></div>
+    <div class="hero-stats">
+      <div>
+        <span class="hero-stat-value" id="statDays">—</span>
+        <span class="hero-stat-label">Days</span>
+      </div>
+      <div>
+        <span class="hero-stat-value" id="statEvents">—</span>
+        <span class="hero-stat-label">Events</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="dayList"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    requireAuth();
+
+    // ── Helpers ──────────────────────────────────────────────────
+
+    const TYPE_ICONS = {
+      flight:   '✈️',
+      activity: '🤿',
+      food:     '🍽️',
+      hotel:    '🏨',
+      transfer: '🚌',
+      info:     'ℹ️',
+    };
+
+    function formatDate(iso) {
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // ── Render ───────────────────────────────────────────────────
+
+    const allEvents = TRIP.days.flatMap(d => d.events);
+    const totalDays = TRIP.days.length;
+
+    document.getElementById('heroTitle').textContent = TRIP.name;
+    document.getElementById('statDays').textContent = totalDays;
+    document.getElementById('statEvents').textContent = allEvents.length;
+
+    if (TRIP.startDate === TRIP.endDate) {
+      document.getElementById('heroDates').textContent = formatDate(TRIP.startDate);
+    } else {
+      document.getElementById('heroDates').textContent =
+        formatDate(TRIP.startDate) + ' – ' + formatDate(TRIP.endDate);
+    }
+
+    document.getElementById('headerSubtitle').textContent =
+      TRIP.days.length + ' day' + (TRIP.days.length !== 1 ? 's' : '') + ' · ' + TRIP.destination;
+
+    const dayList = document.getElementById('dayList');
+
+    if (TRIP.days.length === 0) {
+      dayList.innerHTML = '<p class="empty-day" style="margin-top:40px">No days added yet.</p>';
+    }
+
+    TRIP.days.forEach(day => {
+      const section = document.createElement('div');
+      section.className = 'day-section';
+
+      const header = document.createElement('div');
+      header.className = 'day-header';
+      header.innerHTML = `
+        <span class="day-badge">Day ${day.dayNumber}</span>
+        <span class="day-label">${day.label}</span>
+      `;
+      section.appendChild(header);
+
+      if (day.events.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'empty-day';
+        empty.textContent = 'Free day — nothing scheduled.';
+        section.appendChild(empty);
+      }
+
+      day.events.forEach(event => {
+        const icon = TYPE_ICONS[event.type] || '📌';
+        const card = document.createElement('a');
+        card.className = 'event-card';
+        card.href = `event.html?id=${event.id}`;
+        card.innerHTML = `
+          <div class="event-icon ${event.type}">${icon}</div>
+          <div class="event-body">
+            <div class="event-time">${event.timeDisplay || event.time}</div>
+            <div class="event-title">${event.title}</div>
+            <div class="event-location">${event.location}</div>
+          </div>
+          <div class="event-chevron">›</div>
+        `;
+        section.appendChild(card);
+      });
+
+      dayList.appendChild(section);
+    });
+  </script>
+</body>
+</html>
