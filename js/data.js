@@ -1,5 +1,5 @@
 const TRIP = {
-  name: 'Fiji 2026',
+  name: 'Dalits and Wrights Epic Fiji Holiday!',
   destination: 'Fiji',
   startDate: '2026-07-02',
   endDate: '2026-07-09',
